@@ -1,0 +1,140 @@
+---
+title: "Project 2 - 3 of 3"
+author: "ZIXIAN LIANG"
+date: "2024-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r include=FALSE}
+library(tidyverse)
+library(readr)
+library(tidyr)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+```
+
+
+
+
+## Dataset 3 - All-time Olympic Games Medals
+
+### Data Acquisition 
+
+
+Input files :"Summer Olympic Games Medals.csv” and "Winter Olympic Games Medals.csv" from https://github.com/ZIXIANNOW/DATA607project2/tree/main
+
+
+
+
+
+```{r}
+txturl <- "https://raw.githubusercontent.com/ZIXIANNOW/DATA607project2/main/Summer%20Olympic%20Games%20Medals.csv"
+rawdata3 <- read.csv(txturl,  header = TRUE) 
+summerdata <- rawdata3[-1]
+summerdata
+```
+
+
+
+```{r}
+txturl1 <- "https://raw.githubusercontent.com/ZIXIANNOW/DATA607project2/main/Winter%20Olympic%20Games%20Medals.csv"
+rawdata4 <- read.csv(txturl1,  header = TRUE) 
+winterdata <- rawdata4[-1]
+winterdata
+```
+
+
+### Data Transformation 
+
+
+Since the Medals of the Summer Olympic Games and Winter Olympic Games are stored in separate data frames, it is necessary to merge them in order to facilitate comprehensive statistical analysis.
+
+
+
+
+```{r}
+merged_data <- merge(summerdata, winterdata, by = "Team")
+merged_data
+```
+
+
+
+
+```{r}
+col_names <- colnames(merged_data)
+col_names[2] <- paste0(col_names[2], ".Total")
+col_names[3] <- "Summer.Olympic.Games.Gold.Metals"
+col_names[4] <- "Summer.Olympic.Games.Silver.Metals"
+col_names[5] <- "Summer.Olympic.Games.Bronze.Metals"
+col_names[6] <- "Summer.Olympic.Games.Metal.Total"
+col_names[7] <- paste0(col_names[7], ".Total")
+col_names[8] <-  "Winter.Olympic.Games.Gold.Metals"
+col_names[9] <-  "Winter.Olympic.Games.Silver.Metals"
+col_names[10] <- "Winter.Olympic.Games.Bronze.Metals"
+col_names[11] <- "Winter.Olympic.Games.Metal.Total"
+colnames(merged_data) <- col_names
+merged_data
+```
+
+
+
+```{r}
+result_data <- merged_data
+for (i in 2:6) {
+  merged_data[, i] <- as.numeric(gsub(",", "", as.character(merged_data[, i])))
+  merged_data[, i + 5] <- as.numeric(gsub(",", "", as.character(merged_data[, i + 5])))
+  result_data[, paste0("Sum_", i)] <- merged_data[, i] + merged_data[, i + 5]
+}
+result_data
+```
+
+
+```{r}
+col_names <- colnames(result_data)
+col_names[12] <- "Combined.Olympic.Games.Total"
+col_names[13] <- "Combined.Olympic.Games.Gold.Metals"
+col_names[14] <- "Combined.Olympic.Games.Silver.Metals"
+col_names[15] <- "Combined.Olympic.Games.Bronze.Metals"
+col_names[16] <- "Combined.Olympic.Games.Metal.Total"
+colnames(result_data) <- col_names
+result_data
+```
+
+
+
+
+
+```{r}
+max_row_index <- which.max(result_data[, "Combined.Olympic.Games.Metal.Total"])
+totalmetalresult <- result_data[max_row_index, c("Team", "Combined.Olympic.Games.Metal.Total")]
+totalmetalresult
+```
+
+```{r}
+max_row_index <- which.max(result_data[, "Combined.Olympic.Games.Gold.Metals"])
+goldresult <- result_data[max_row_index, c("Team", "Combined.Olympic.Games.Gold.Metals")]
+goldresult
+```
+
+
+```{r}
+max_row_indices <- which(result_data$Combined.Olympic.Games.Total == max(result_data$Combined.Olympic.Games.Total))
+gameresult <- result_data[max_row_indices, c("Team", "Combined.Olympic.Games.Total")]
+gameresult
+```
+
+
+### Conclusion
+
+
+Overall, the United States has historically amassed a total of 2,959 medals across all Olympic Games, making it the country with the highest number of Olympic medals. Among these, 1,174 are gold medals, establishing the United States as the leader in gold medal performance. Another interesting fact is that, when combining both the Summer and Winter Games, France, Great Britain, and Switzerland have each participated in a total of 53 Olympic Games, the highest number among all countries.
+
+
+

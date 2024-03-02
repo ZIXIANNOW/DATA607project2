@@ -1,0 +1,106 @@
+---
+title: "Project 2 - 2 of 3"
+author: "ZIXIAN LIANG"
+date: "2024-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r include=FALSE}
+library(tidyverse)
+library(readr)
+library(tidyr)
+library(tibble)
+library(dplyr)
+library(countrycode)
+library(ggplot2)
+```
+
+
+## Dataset 2 - 2023 Euro Long-term interest Rate
+
+### Data Acquisition 
+
+
+Input file:"Euro Long-term interest.csv” from https://github.com/ZIXIANNOW/DATA607project2/blob/main/Euro%20Long-term%20interest.csv
+
+
+
+
+```{r}
+txturl <- "https://raw.githubusercontent.com/ZIXIANNOW/DATA607project2/main/Euro%20Long-term%20interest.csv"
+rawdata2 <- read.csv(txturl,  header = TRUE) 
+rawdata2
+```
+
+
+### Data Transformation 
+
+
+Since the dataset solely includes ISO Series keys, it's necessary to extract country abbreviations and create a column with the complete country names for clarity.
+
+
+
+```{r}
+rawdata2$EU_ISO <- gsub("^(?:[^\\.]*\\.){2}([^\\.]*)\\..*$", "\\1", rawdata2$Series.key)
+rawdata2 <- rawdata2[, c("EU_ISO", names(rawdata2)[-which(names(rawdata2) == "EU_ISO")])]
+rawdata2$Country <- countrycode(rawdata2$EU_ISO, "iso2c", "country.name")
+rawdata2 <- rawdata2[, c("Country", names(rawdata2)[-which(names(rawdata2) == "Country")])]
+rawdata2 <- rawdata2 %>% arrange(Country, `Obs..Date`)
+rawdata2 <- rawdata2 %>% rename(Month = `Obs..Date`, Interest_Rate = `Obs..value`)
+interestdata <- select(rawdata2,Country,EU_ISO,Month,Interest_Rate,Series.key)
+interestdata <- separate(interestdata, Month, into = c("Year", "Month"), sep = "-")
+interestdata
+```
+
+
+
+```{r}
+ggplot(data = interestdata, aes(x = Month, y = Interest_Rate, color = Country)) +
+  geom_point() +
+  labs(x = "Month", y = "Interest Rate", title = "2023 Interest Rate by Country and Month")
+```
+
+
+```{r}
+filtered_raw <- rawdata2 %>%
+  filter(Month %in% c("2023-01", "2023-12"))
+filtered_data <- select(filtered_raw,Country,EU_ISO,Month,Interest_Rate,Series.key)
+filtered_data
+
+```
+
+```{r}
+filtered_update <-  filtered_data %>% 
+             pivot_wider(names_from = Month, values_from = Interest_Rate)
+
+filtered_update <- filtered_update %>%
+  mutate(Change = `2023-12` - `2023-01`,
+         Percentage_Change = Change / `2023-01` * 100) %>%
+  arrange(Percentage_Change)
+
+filtered_update
+```
+```{r}
+summary(filtered_update$Percentage_Change)
+```
+
+
+```{r}
+ggplot(data = filtered_update, aes(x = Country, y = Percentage_Change)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(x = "Country", y = "Percentage Change", title = "2023 Interst Rate Percentage Change by Country") +
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+### Conclusion
+
+
+In summary, Hungary consistently has the highest interest rate among all EU countries. Over the course of the year, Greece experienced the largest percentage decrease, falling by 23.54%. Lithuania maintained the same interest rate from January to December, making it the most stable in terms of interest rates. Additionally, Bulgaria saw the largest percentage increase, rising by 116.76%.
+

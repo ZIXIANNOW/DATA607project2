@@ -1,0 +1,90 @@
+---
+title: "Project 2 - 1 of 3"
+author: "ZIXIAN LIANG"
+date: "2024-03-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(tidyverse)
+library(readr)
+library(tidyr)
+library(tibble)
+```
+
+
+## Introduction
+
+The objective of this task is to choose and clean up three datasets stored in CSV format. Utilizing the tidyr and dplyr packages facilitates the process of organizing and refining the data, enabling a more effective review and analysis. I'll be selecting datasets of varied types and applying diverse methods for review.
+
+
+
+## Dataset 1 - 2023 US Vehicle Model Sales 
+
+### Data Acquisition 
+
+
+Input file:"US Vehicle Model Sales.csv” from https://github.com/ZIXIANNOW/DATA607project2/blob/main/US%20Vehicle%20Model%20Sales.csv
+
+Also, remove useless first column.
+
+```{r}
+txturl <- "https://raw.githubusercontent.com/ZIXIANNOW/DATA607project2/main/US%20Vehicle%20Model%20Sales.csv"
+rawdata1 <- read.csv(txturl, skip = 1, header = TRUE) 
+rawdata1
+```
+
+```{r}
+rawdata1 <- rawdata1[-1]
+rawdata1
+```
+
+
+
+Then extract Brand name from Model for better calculating.
+
+
+
+```{r}
+rawdata1$Model <- as.character(rawdata1$Model)
+rawdata1$Brand <- sapply(strsplit(rawdata1$Model, " "), function(x) x[1])
+rawdata1 <- rawdata1[, c("Brand", names(rawdata1)[-which(names(rawdata1) == "Brand")])]
+rawdata1
+```
+
+
+```{r}
+brandata1 <- select(rawdata1, -Model)
+brandata1 <- mutate_at(brandata1, vars(starts_with("Jan"):ends_with("Dec")), function(x) as.numeric(gsub(",", "", x)))
+brandata1 <- mutate(brandata1, Total = rowSums(select(brandata1, starts_with("Jan"):ends_with("Dec"))))
+brandresult <- brandata1 %>%
+  group_by(Brand) %>%
+  summarise(Sum_Total = sum(Total)) %>%
+  arrange(desc(Sum_Total))
+brandresult
+```
+
+
+```{r}
+summary(brandresult) 
+```
+
+
+```{r}
+ggplot(data = brandresult, aes(x = Brand, y = Sum_Total)) +
+  geom_point() +
+  labs(title = "2023 Total US Vehicle Model Sales by Brand ", x = "Brand", y = "Total Sum") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+### Conclusion
+
+
+The plot indicates that the majority of vehicle brands did not surpass sales of 500,000 units. Among them, only the top three brands, Ford, Toyota, and Chevrolet, achieved sales exceeding 1,500,000 units. Ford led the pack with sales reaching 1,904,038 units, while Karma sold fewer than 200 units, totaling just 199.
+
+
